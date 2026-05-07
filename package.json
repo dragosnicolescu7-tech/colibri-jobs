@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "node prisma/seed.cjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
