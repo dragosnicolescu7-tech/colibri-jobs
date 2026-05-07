@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum UserRole {
+  CANDIDATE
+  COMPANY
+  UNIVERSITY
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CandidateApplicationStatus {
+  APPLIED
+  REJECTED
+  INTERVIEW
+  HIRED
+}
+
+enum ListingCategory {
+  JOB
+  COURSE
+  STUDY_PROGRAM
+}
+
+enum PromotionPlan {
+  TOP_30
+  PROMOTED_15
+  PROMOTED_7
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String?
+  fullName           String
+  phoneNumber        String    @unique
+  phoneVerified      Boolean   @default(false)
+  role               UserRole
+  city               String?
+  country            String?
+  title              String?
+  cvUrl              String?
+  openToOpportunities Boolean  @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company            CompanyProfile?
+  university         UniversityProfile?
+  ownedListings      Listing[]  @relation("ListingOwner")
+  applications       Application[]
+}
+
+model CompanyProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  companyName        String
+  cui                String             @unique
+  fiscalCode         String
+  address            String
+  contactEmail       String
+  contactName        String
+  verificationStatus VerificationStatus @default(PENDING)
+  approvedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UniversityProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  universityName     String
+  address            String
+  faculties          String
+  contactEmail       String
+  contactPhone       String
+  description        String
+  verificationStatus VerificationStatus @default(PENDING)
+  approvedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Listing {
+  id                 String      @id @default(cuid())
+  ownerUserId        String
+  category           ListingCategory
+  title              String
+  description        String
+  employmentType     String?
+  experienceLevel    String?
+  salaryMin          Int?
+  salaryMax          Int?
+  city               String
+  country            String
+  benefits           String?
+  applicationEmail   String?
+  deadlineAt         DateTime?
+  relocationSupport  Boolean     @default(false)
+  relocationDetails  String?
+  disabilityFriendly Boolean     @default(false)
+  studyLevel         String?
+  studyYears         String?
+  seatsAvailable     Int?
+  eligibility        String?
+  requiredDocuments  String?
+  selectionProcess   String?
+  feesAndScholarships String?
+  curriculum         String?
+  expiresAt          DateTime
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  owner              User        @relation("ListingOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  applications       Application[]
+  promotions         Promotion[]
+}
+
+model Application {
+  id                 String                     @id @default(cuid())
+  listingId          String
+  candidateId        String
+  motivation         String
+  cvUrl              String
+  status             CandidateApplicationStatus @default(APPLIED)
+  createdAt          DateTime                   @default(now())
+
+  listing            Listing                    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  candidate          User                       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model Promotion {
+  id                 String        @id @default(cuid())
+  listingId          String
+  plan               PromotionPlan
+  priceRon           Int
+  startsAt           DateTime      @default(now())
+  endsAt             DateTime
+  stripePaymentId    String?
+  createdAt          DateTime      @default(now())
+
+  listing            Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
